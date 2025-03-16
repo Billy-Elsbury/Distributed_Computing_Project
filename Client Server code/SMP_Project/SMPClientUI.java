@@ -4,34 +4,43 @@ import java.io.IOException;
 
 public class SMPClientUI extends JFrame {
     private String username;
-    private final MyStreamSocket mySocket;
+    private final ClientHelper clientHelper;
     private JTextArea outputArea;
 
-    public SMPClientUI(String username, MyStreamSocket mySocket) {
+    public SMPClientUI(String username, ClientHelper clientHelper) {
         this.username = username;
-        this.mySocket = mySocket;
+        this.clientHelper = clientHelper;
         initializeUI();
     }
 
     private void initializeUI() {
         setTitle("SMP Client - " + username);
         setSize(600, 400);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Change to DISPOSE_ON_CLOSE
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        // Set dark mode colors
+        getContentPane().setBackground(new Color(30, 30, 30));
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
         JPanel inputPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        inputPanel.setBackground(new Color(30, 30, 30));
 
         JLabel messageLabel = new JLabel("Message:");
+        messageLabel.setForeground(Color.WHITE);
         JTextField messageField = new JTextField();
-        messageField.setToolTipText("Enter message");
+        messageField.setBackground(new Color(50, 50, 50));
+        messageField.setForeground(Color.WHITE);
+        messageField.setCaretColor(Color.WHITE);
 
         JLabel idLabel = new JLabel("Message ID:");
+        idLabel.setForeground(Color.WHITE);
         JTextField idField = new JTextField();
-        idField.setToolTipText("Enter message ID (leave blank for all)");
+        idField.setBackground(new Color(50, 50, 50));
+        idField.setForeground(Color.WHITE);
+        idField.setCaretColor(Color.WHITE);
 
         inputPanel.add(messageLabel);
         inputPanel.add(messageField);
@@ -39,11 +48,32 @@ public class SMPClientUI extends JFrame {
         inputPanel.add(idField);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        buttonPanel.setBackground(new Color(30, 30, 30));
+
         JButton uploadButton = new JButton("Upload");
+        uploadButton.setBackground(Color.WHITE);
+        uploadButton.setForeground(Color.BLACK);
+        uploadButton.setFocusPainted(false);
+
         JButton downloadButton = new JButton("Download");
+        downloadButton.setBackground(Color.WHITE);
+        downloadButton.setForeground(Color.BLACK);
+        downloadButton.setFocusPainted(false);
+
         JButton clearButton = new JButton("Clear");
+        clearButton.setBackground(Color.WHITE);
+        clearButton.setForeground(Color.BLACK);
+        clearButton.setFocusPainted(false);
+
         JButton logoffButton = new JButton("Logoff");
+        logoffButton.setBackground(Color.WHITE);
+        logoffButton.setForeground(Color.BLACK);
+        logoffButton.setFocusPainted(false);
+
         JButton downloadAllButton = new JButton("Download All Messages");
+        downloadAllButton.setBackground(Color.WHITE);
+        downloadAllButton.setForeground(Color.BLACK);
+        downloadAllButton.setFocusPainted(false);
 
         buttonPanel.add(uploadButton);
         buttonPanel.add(downloadButton);
@@ -55,7 +85,11 @@ public class SMPClientUI extends JFrame {
         outputArea.setEditable(false);
         outputArea.setWrapStyleWord(true);
         outputArea.setLineWrap(true);
+        outputArea.setBackground(new Color(50, 50, 50));
+        outputArea.setForeground(Color.WHITE);
+        outputArea.setCaretColor(Color.WHITE);
         JScrollPane scrollPane = new JScrollPane(outputArea);
+        scrollPane.setBackground(new Color(30, 30, 30));
 
         gbc.gridx = 0;
         gbc.gridy = 0;
@@ -90,8 +124,7 @@ public class SMPClientUI extends JFrame {
         }
         try {
             int messageId = id.isEmpty() ? -1 : Integer.parseInt(id);
-            mySocket.sendMessage(RequestCodes.UPLOAD + " " + username + " " + messageId + " " + message);
-            String response = mySocket.receiveMessage();
+            String response = clientHelper.upload(username, messageId, message);
             outputArea.append(response + "\n");
         } catch (NumberFormatException e) {
             outputArea.append(ErrorCodes.INVALID_MESSAGE_ID + " Invalid message ID.\n");
@@ -106,8 +139,7 @@ public class SMPClientUI extends JFrame {
             return;
         }
         try {
-            mySocket.sendMessage(RequestCodes.DOWNLOAD + " " + id);
-            String response = mySocket.receiveMessage();
+            String response = clientHelper.download(id);
             outputArea.append("Messages from server:\n" + response + "\n");
         } catch (IOException ex) {
             outputArea.append("Error: " + ex.getMessage() + "\n");
@@ -120,13 +152,9 @@ public class SMPClientUI extends JFrame {
             return;
         }
         try {
-            mySocket.sendMessage(RequestCodes.DOWNLOAD_ALL + "");
-            String response = mySocket.receiveMessage();
-
+            String response = clientHelper.download("all");
             String[] messages = response.split("\\|");
-
             outputArea.setText("");
-
             for (String message : messages) {
                 outputArea.append(message + "\n");
             }
@@ -148,8 +176,7 @@ public class SMPClientUI extends JFrame {
         );
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                mySocket.sendMessage(RequestCodes.CLEAR + "");
-                String result = mySocket.receiveMessage();
+                String result = clientHelper.clear();
                 outputArea.append(result + "\n");
             } catch (IOException ex) {
                 outputArea.append("Error: " + ex.getMessage() + "\n");
@@ -163,10 +190,9 @@ public class SMPClientUI extends JFrame {
             return;
         }
         try {
-            mySocket.sendMessage(RequestCodes.LOGOFF + " " + username);
-            String response = mySocket.receiveMessage();
+            String response = clientHelper.login(username, ""); // Send empty password for logoff
             outputArea.append(response + "\n");
-            mySocket.close();
+            clientHelper.close();
             username = null;
 
             dispose();

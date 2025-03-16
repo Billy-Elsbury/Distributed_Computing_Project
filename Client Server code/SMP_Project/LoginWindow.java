@@ -106,7 +106,8 @@ public class LoginWindow extends JFrame {
                 String response = mySocket.receiveMessage();
 
                 if (response.startsWith(String.valueOf(ErrorCodes.SUCCESS))) {
-                    SMPClientUI clientUI = new SMPClientUI(username, mySocket);
+                    ClientHelper clientHelper = new ClientHelper("localhost", 12345);
+                    SMPClientUI clientUI = new SMPClientUI("username", clientHelper);
                     clientUI.setVisible(true);
                     dispose();
                 } else {
