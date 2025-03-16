@@ -50,17 +50,21 @@ public class SMPClient {
                         username = br.readLine();
                         System.out.println("Enter password:");
                         String password = br.readLine();
-                        mySocket.sendMessage("LOGIN " + username + " " + password);
+                        mySocket.sendMessage(RequestCodes.LOGIN + " " + username + " " + password);
                         System.out.println(mySocket.receiveMessage());
                         break;
 
                     case "UPLOAD":
                         System.out.println("Enter message:");
                         String message = br.readLine();
+                        if (message.isEmpty()) {
+                            System.out.println(ErrorCodes.EMPTY_MESSAGE + " Message content cannot be empty.");
+                            break;
+                        }
                         System.out.println("Enter message ID (leave blank to auto-generate):");
                         String id = br.readLine();
-                        int messageId = id.isEmpty() ? -1 : Integer.parseInt(id);  // Use -1 if ID is blank
-                        mySocket.sendMessage("UPLOAD " + username + " " + messageId + " " + message);
+                        int messageId = id.isEmpty() ? -1 : Integer.parseInt(id);
+                        mySocket.sendMessage(RequestCodes.UPLOAD + " " + username + " " + messageId + " " + message);
                         System.out.println(mySocket.receiveMessage());
                         break;
 
@@ -68,12 +72,10 @@ public class SMPClient {
                         System.out.println("Enter 'all' to download all messages or a specific message ID:");
                         String downloadInput = br.readLine();
                         if (downloadInput.equalsIgnoreCase("all")) {
-                            // Download all messages
-                            mySocket.sendMessage("DOWNLOAD all");
+                            mySocket.sendMessage(RequestCodes.DOWNLOAD_ALL + "");
                             System.out.println("Messages from server:\n" + mySocket.receiveMessage());
                         } else {
-                            // Download specific message by ID
-                            mySocket.sendMessage("DOWNLOAD " + downloadInput);
+                            mySocket.sendMessage(RequestCodes.DOWNLOAD + " " + downloadInput);
                             System.out.println("Message from server:\n" + mySocket.receiveMessage());
                         }
                         break;
@@ -82,15 +84,11 @@ public class SMPClient {
                         System.out.println("Are you sure you want to clear all messages? (yes/no):");
                         String confirmation = br.readLine().toLowerCase();
                         if (confirmation.equals("yes")) {
-                            mySocket.sendMessage("CLEAR");
+                            mySocket.sendMessage(RequestCodes.CLEAR + "");
                             System.out.println(mySocket.receiveMessage());
                         } else {
                             System.out.println("Clear operation cancelled.");
                         }
-                        break;
-
-                    default:
-                        System.out.println("102 Unknown command.");
                         break;
                 }
             }

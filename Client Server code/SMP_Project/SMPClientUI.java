@@ -1,193 +1,196 @@
-import javafx.application.Application;
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.stage.Stage;
+import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 
-public class SMPClientUI extends Application {
+public class SMPClientUI extends JFrame {
     private String username;
     private final MyStreamSocket mySocket;
-    private TextArea outputArea;
+    private JTextArea outputArea;
 
     public SMPClientUI(String username, MyStreamSocket mySocket) {
         this.username = username;
         this.mySocket = mySocket;
+        initializeUI();
     }
 
-    public void show() {
-        Stage stage = new Stage();
-        start(stage);
-    }
+    private void initializeUI() {
+        setTitle("SMP Client - " + username);
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null); // Center the window on the screen
 
-    @Override
-    public void start(Stage primaryStage) {
-        primaryStage.setTitle("SMP Client - " + username);
-
-        // Create a border layout
-        BorderPane borderPane = new BorderPane();
+        // Use GridBagLayout for better control over component placement
+        setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
 
         // Input panel
-        GridPane inputPanel = new GridPane();
-        inputPanel.setPadding(new Insets(10, 10, 10, 10));
-        inputPanel.setVgap(10);
-        inputPanel.setHgap(10);
+        JPanel inputPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Message field
-        Label messageLabel = new Label("Message:");
-        GridPane.setConstraints(messageLabel, 0, 0);
-        TextField messageField = new TextField();
-        messageField.setPromptText("Enter message");
-        GridPane.setConstraints(messageField, 1, 0);
+        JLabel messageLabel = new JLabel("Message:");
+        JTextField messageField = new JTextField();
+        messageField.setToolTipText("Enter message");
 
         // Message ID field
-        Label idLabel = new Label("Message ID:");
-        GridPane.setConstraints(idLabel, 0, 1);
-        TextField idField = new TextField();
-        idField.setPromptText("Enter message ID (leave blank for all)");
-        GridPane.setConstraints(idField, 1, 1);
+        JLabel idLabel = new JLabel("Message ID:");
+        JTextField idField = new JTextField();
+        idField.setToolTipText("Enter message ID (leave blank for all)");
 
         // Add components to the input panel
-        inputPanel.getChildren().addAll(messageLabel, messageField, idLabel, idField);
+        inputPanel.add(messageLabel);
+        inputPanel.add(messageField);
+        inputPanel.add(idLabel);
+        inputPanel.add(idField);
 
         // Button panel
-        HBox buttonPanel = new HBox(10);
-        buttonPanel.setPadding(new Insets(10, 10, 10, 10));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        JButton uploadButton = new JButton("Upload");
+        JButton downloadButton = new JButton("Download");
+        JButton clearButton = new JButton("Clear");
+        JButton logoffButton = new JButton("Logoff");
+        JButton downloadAllButton = new JButton("Download All Messages");
 
-        Button uploadButton = new Button("Upload");
-        Button downloadButton = new Button("Download");
-        Button clearButton = new Button("Clear");
-        Button logoffButton = new Button("Logoff");
+        buttonPanel.add(uploadButton);
+        buttonPanel.add(downloadButton);
+        buttonPanel.add(clearButton);
+        buttonPanel.add(logoffButton);
+        buttonPanel.add(downloadAllButton);
 
-        buttonPanel.getChildren().addAll(uploadButton, downloadButton, clearButton, logoffButton);
-
-        Button downloadAllButton = new Button("Download All Messages");
-        buttonPanel.getChildren().add(downloadAllButton);
-
-// Add action listener for the new button
-        downloadAllButton.setOnAction(e -> downloadAll());
-        
         // Output area
-        outputArea = new TextArea();
+        outputArea = new JTextArea();
         outputArea.setEditable(false);
-        outputArea.setWrapText(true);
+        outputArea.setWrapStyleWord(true);
+        outputArea.setLineWrap(true);
+        JScrollPane scrollPane = new JScrollPane(outputArea);
 
-        // Add components to the border layout
-        borderPane.setTop(inputPanel);
-        borderPane.setCenter(buttonPanel);
-        borderPane.setBottom(new ScrollPane(outputArea));
+        // Add components to the frame using GridBagConstraints
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        add(inputPanel, gbc);
 
-        // Set the scene
-        Scene scene = new Scene(borderPane, 600, 400);
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        gbc.gridy = 1;
+        gbc.insets = new Insets(10, 0, 10, 0); // Add some vertical spacing
+        add(buttonPanel, gbc);
+
+        gbc.gridy = 2;
+        gbc.weighty = 1.0; // Allow the output area to expand vertically
+        gbc.fill = GridBagConstraints.BOTH;
+        add(scrollPane, gbc);
 
         // Add action listeners
-        uploadButton.setOnAction(e -> upload(messageField.getText(), idField.getText()));
-        downloadButton.setOnAction(e -> download(idField.getText()));
-        clearButton.setOnAction(e -> clear());
-        logoffButton.setOnAction(e -> logoff(primaryStage));
+        uploadButton.addActionListener(e -> upload(messageField.getText(), idField.getText()));
+        downloadButton.addActionListener(e -> download(idField.getText()));
+        downloadAllButton.addActionListener(e -> downloadAll());
+        clearButton.addActionListener(e -> clear());
+        logoffButton.addActionListener(e -> logoff());
     }
 
     private void upload(String message, String id) {
         if (username == null) {
-            outputArea.appendText("102 Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
             return;
         }
-
+        if (message.isEmpty()) {
+            outputArea.append(ErrorCodes.EMPTY_MESSAGE + " Message content cannot be empty.\n");
+            return;
+        }
         try {
-            int messageId = id.isEmpty() ? -1 : Integer.parseInt(id);  // Use -1 if ID is blank
-            mySocket.sendMessage("UPLOAD " + username + " " + messageId + " " + message);
+            int messageId = id.isEmpty() ? -1 : Integer.parseInt(id);
+            mySocket.sendMessage(RequestCodes.UPLOAD + " " + username + " " + messageId + " " + message);
             String response = mySocket.receiveMessage();
-            outputArea.appendText(response + "\n");
+            outputArea.append(response + "\n");
         } catch (NumberFormatException e) {
-            outputArea.appendText("102 Invalid message ID.\n");
+            outputArea.append(ErrorCodes.INVALID_MESSAGE_ID + " Invalid message ID.\n");
         } catch (IOException ex) {
-            outputArea.appendText("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Error: " + ex.getMessage() + "\n");
         }
     }
 
     private void download(String id) {
         if (username == null) {
-            outputArea.appendText("102 Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
             return;
         }
-
         try {
-            //download the specific message by ID
-            mySocket.sendMessage("DOWNLOAD " + id);
-
+            mySocket.sendMessage(RequestCodes.DOWNLOAD + " " + id);
             String response = mySocket.receiveMessage();
-            outputArea.appendText("Messages from server:\n" + response + "\n");  // Display all messages at once
+            outputArea.append("Messages from server:\n" + response + "\n");
         } catch (IOException ex) {
-            outputArea.appendText("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Error: " + ex.getMessage() + "\n");
         }
     }
 
     private void downloadAll() {
         if (username == null) {
-            outputArea.appendText("102 Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
             return;
         }
-
         try {
-            mySocket.sendMessage("DOWNLOAD_ALL");
+            mySocket.sendMessage(RequestCodes.DOWNLOAD_ALL + "");
             String response = mySocket.receiveMessage();
 
             // Split the response using the delimiter
             String[] messages = response.split("\\|");
 
             // Clear the output area before displaying new messages
-            outputArea.clear();
+            outputArea.setText("");
 
             // Append each message on a new line
             for (String message : messages) {
-                outputArea.appendText(message + "\n");
+                outputArea.append(message + "\n");
             }
         } catch (IOException ex) {
-            outputArea.appendText("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Error: " + ex.getMessage() + "\n");
         }
     }
 
     private void clear() {
         if (username == null) {
-            outputArea.appendText("102 Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
             return;
         }
-
-        // Show confirmation dialog on the client side
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to clear all messages?", ButtonType.YES, ButtonType.NO);
-        alert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.YES) {
-                try {
-                    mySocket.sendMessage("CLEAR");
-                    String result = mySocket.receiveMessage();
-                    outputArea.appendText(result + "\n");
-                } catch (IOException ex) {
-                    outputArea.appendText("Error: " + ex.getMessage() + "\n");
-                }
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to clear all messages?",
+                "Confirm Clear",
+                JOptionPane.YES_NO_OPTION
+        );
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                mySocket.sendMessage(RequestCodes.CLEAR + "");
+                String result = mySocket.receiveMessage();
+                outputArea.append(result + "\n");
+            } catch (IOException ex) {
+                outputArea.append("Error: " + ex.getMessage() + "\n");
             }
-        });
+        }
     }
 
-    private void logoff(Stage primaryStage) {
+    private void logoff() {
         if (username == null) {
-            outputArea.appendText("102 Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
             return;
         }
-
         try {
-            mySocket.sendMessage("LOGOFF " + username);
+            mySocket.sendMessage(RequestCodes.LOGOFF + " " + username);
             String response = mySocket.receiveMessage();
-            outputArea.appendText(response + "\n");
+            outputArea.append(response + "\n");
             mySocket.close();
             username = null;
-            primaryStage.close();
+
+            // Close the current window
+            dispose();
+
+            // Reopen the login window
+            SwingUtilities.invokeLater(() -> {
+                LoginWindow loginWindow = new LoginWindow();
+                loginWindow.setVisible(true);
+            });
         } catch (IOException ex) {
-            outputArea.appendText("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Error: " + ex.getMessage() + "\n");
         }
     }
 }

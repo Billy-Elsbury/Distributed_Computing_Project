@@ -6,6 +6,7 @@ public class MessageStorage {
     private static MessageStorage instance;
     private Map<String, List<Message>> userMessages;  // Store messages with usernames
     private String storageFile = "messages.txt";  // File to store messages
+    private int globalMessageIdCounter = 0;  // Global counter for message IDs
 
     // Private constructor to prevent instantiation
     private MessageStorage() {
@@ -24,16 +25,18 @@ public class MessageStorage {
     // Inner class to represent a message with an ID
     private static class Message {
         int id;
+        String username;
         String content;
 
-        Message(int id, String content) {
+        Message(int id, String username, String content) {
             this.id = id;
+            this.username = username;
             this.content = content;
         }
 
         @Override
         public String toString() {
-            return id + ":" + content;
+            return username + ":" + id + ":" + content;
         }
     }
 
@@ -48,7 +51,10 @@ public class MessageStorage {
                     int id = Integer.parseInt(parts[1]);
                     String content = parts[2];
                     userMessages.putIfAbsent(username, new ArrayList<>());
-                    userMessages.get(username).add(new Message(id, content));
+                    userMessages.get(username).add(new Message(id, username, content));
+                    if (id > globalMessageIdCounter) {
+                        globalMessageIdCounter = id;  // Update the global counter
+                    }
                 }
             }
         } catch (IOException e) {
@@ -61,7 +67,7 @@ public class MessageStorage {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(storageFile))) {
             for (Map.Entry<String, List<Message>> entry : userMessages.entrySet()) {
                 for (Message msg : entry.getValue()) {
-                    writer.write(entry.getKey() + ":" + msg.toString() + "\n");
+                    writer.write(msg.toString() + "\n");
                 }
             }
         } catch (IOException e) {
@@ -75,35 +81,27 @@ public class MessageStorage {
 
         // If ID is not provided (e.g., -1), generate the next available ID
         if (id == -1) {
-            id = getNextAvailableId(username);
+            id = getNextAvailableId();
         }
 
-        // Check if the ID already exists
-        for (Message msg : userMessages.get(username)) {
-            if (msg.id == id) {
-                return false;  // ID already exists
+        // Check if the ID already exists globally
+        for (List<Message> messages : userMessages.values()) {
+            for (Message msg : messages) {
+                if (msg.id == id) {
+                    return false;  // ID already exists
+                }
             }
         }
 
         // Add the message with the generated or provided ID
-        userMessages.get(username).add(new Message(id, message));
+        userMessages.get(username).add(new Message(id, username, message));
         saveMessagesToFile();  // Save messages to file
         return true;
     }
 
-    // Helper method to generate the next available ID for a user
-    private int getNextAvailableId(String username) {
-        List<Message> messages = userMessages.get(username);
-        if (messages.isEmpty()) {
-            return 1;  // Start with ID 1 if no messages exist
-        } else {
-            // Find the maximum ID and increment it by 1
-            int maxId = messages.stream()
-                    .mapToInt(msg -> msg.id)
-                    .max()
-                    .orElse(0);
-            return maxId + 1;
-        }
+    // Helper method to generate the next available ID globally
+    private int getNextAvailableId() {
+        return ++globalMessageIdCounter;  // Increment and return the global counter
     }
 
     // Get a specific message by ID for a user
@@ -132,6 +130,7 @@ public class MessageStorage {
     // Clear all messages (thread-safe)
     public synchronized void clearMessages() {
         userMessages.clear();  // Clear the entire map
+        globalMessageIdCounter = 0;  // Reset the global counter
         saveMessagesToFile();  // Save changes to file
     }
 }

@@ -1,94 +1,93 @@
-import javafx.application.Application;
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-import javafx.stage.Stage;
-
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 
-public class LoginWindow2 extends Application {
+public class LoginWindow2 extends JFrame {
     public static void main(String[] args) {
-        launch(args);
+        // Run the GUI on the Event Dispatch Thread (EDT)
+        SwingUtilities.invokeLater(() -> {
+            LoginWindow loginWindow = new LoginWindow();
+            loginWindow.setVisible(true);
+        });
     }
 
-    @Override
-    public void start(Stage primaryStage) {
-        primaryStage.setTitle("Login");
+    public LoginWindow2() {
+        setTitle("Login");
+        setSize(300, 200);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null); // Center the window on the screen
 
-        // Create a grid layout
-        GridPane grid = new GridPane();
-        grid.setPadding(new Insets(20, 20, 20, 20));
-        grid.setVgap(10);
-        grid.setHgap(10);
+        // Create a panel with a GridLayout
+        JPanel panel = new JPanel(new GridLayout(3, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Username label and field
-        Label userLabel = new Label("Username:");
-        GridPane.setConstraints(userLabel, 0, 0);
-        TextField userField = new TextField();
-        userField.setPromptText("Enter username");
-        GridPane.setConstraints(userField, 1, 0);
+        JLabel userLabel = new JLabel("Username:");
+        JTextField userField = new JTextField();
+        userField.setToolTipText("Enter username");
 
         // Password label and field
-        Label passLabel = new Label("Password:");
-        GridPane.setConstraints(passLabel, 0, 1);
-        PasswordField passField = new PasswordField();
-        passField.setPromptText("Enter password");
-        GridPane.setConstraints(passField, 1, 1);
+        JLabel passLabel = new JLabel("Password:");
+        JPasswordField passField = new JPasswordField();
+        passField.setToolTipText("Enter password");
 
         // Login button
-        Button loginButton = new Button("Login");
-        GridPane.setConstraints(loginButton, 1, 2);
-        loginButton.setOnAction(e -> {
-            String username = userField.getText();
-            String password = passField.getText();
+        JButton loginButton = new JButton("Login");
+        loginButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = userField.getText();
+                String password = new String(passField.getPassword());
 
-            // Validate login
-            if (!username.isEmpty() && !password.isEmpty()) {
-                try {
-                    // Set the truststore properties
-                    System.setProperty("javax.net.ssl.trustStore", "clientTruststore.jks");
-                    System.setProperty("javax.net.ssl.trustStorePassword", "password");
+                // Validate login
+                if (!username.isEmpty() && !password.isEmpty()) {
+                    try {
+                        // Set the truststore properties
+                        System.setProperty("javax.net.ssl.trustStore", "clientTruststore.jks");
+                        System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
-                    // Create an SSL socket
-                    SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-                    SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket("localhost", 12345);
+                        // Create an SSL socket
+                        SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                        SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket("localhost", 12345);
 
-                    // Wrap the SSL socket in MyStreamSocket
-                    MyStreamSocket mySocket = new MyStreamSocket(sslSocket);
+                        // Wrap the SSL socket in MyStreamSocket
+                        MyStreamSocket mySocket = new MyStreamSocket(sslSocket);
 
-                    // Send the LOGIN command
-                    mySocket.sendMessage("LOGIN " + username + " " + password);
-                    String response = mySocket.receiveMessage();
+                        // Send the LOGIN request using RequestCodes
+                        mySocket.sendMessage(RequestCodes.LOGIN + " " + username + " " + password);
+                        String response = mySocket.receiveMessage();
 
-                    if (response.startsWith("101")) {
-                        // Login successful, open the main application window
-                        SMPClientUI clientUI = new SMPClientUI(username, mySocket);
-                        clientUI.show();
-                        primaryStage.close();
-                    } else {
-                        // Login failed, show an error message
-                        Alert alert = new Alert(Alert.AlertType.ERROR, response, ButtonType.OK);
-                        alert.showAndWait();
+                        if (response.startsWith(String.valueOf(ErrorCodes.SUCCESS))) {
+                            // Login successful, open the main application window
+                            SMPClientUI clientUI = new SMPClientUI(username, mySocket);
+                            clientUI.show();
+                            dispose(); // Close the login window
+                        } else {
+                            // Login failed, show an error message
+                            JOptionPane.showMessageDialog(LoginWindow2.this, response, "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(LoginWindow2.this, "Error connecting to the server: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
-                } catch (IOException ex) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR, "Error connecting to the server: " + ex.getMessage(), ButtonType.OK);
-                    alert.showAndWait();
+                } else {
+                    JOptionPane.showMessageDialog(LoginWindow2.this, "Please enter a username and password.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Please enter a username and password.", ButtonType.OK);
-                alert.showAndWait();
             }
         });
 
-        // Add components to the grid
-        grid.getChildren().addAll(userLabel, userField, passLabel, passField, loginButton);
+        // Add components to the panel
+        panel.add(userLabel);
+        panel.add(userField);
+        panel.add(passLabel);
+        panel.add(passField);
+        panel.add(new JLabel()); // Empty label for spacing
+        panel.add(loginButton);
 
-        // Set the scene
-        Scene scene = new Scene(grid, 300, 150);
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        // Add the panel to the frame
+        add(panel);
     }
 }
