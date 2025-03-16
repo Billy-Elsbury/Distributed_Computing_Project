@@ -1,16 +1,24 @@
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
 public class MessageStorage {
+    // Singleton instance
+    private static MessageStorage instance;
     private Map<String, List<Message>> userMessages;  // Store messages with usernames
     private String storageFile = "messages.txt";  // File to store messages
 
-    public MessageStorage() {
+    // Private constructor to prevent instantiation
+    private MessageStorage() {
         this.userMessages = new HashMap<>();
         loadMessagesFromFile();  // Load messages from file on startup
+    }
+
+    // Singleton accessor
+    public static synchronized MessageStorage getInstance() {
+        if (instance == null) {
+            instance = new MessageStorage();
+        }
+        return instance;
     }
 
     // Inner class to represent a message with an ID
@@ -61,28 +69,41 @@ public class MessageStorage {
         }
     }
 
-    // Add a message with a custom ID
-    public boolean addMessage(String username, int id, String message) {
+    // Add a message with an optional ID (if ID is -1, generate the next available ID)
+    public synchronized boolean addMessage(String username, int id, String message) {
         userMessages.putIfAbsent(username, new ArrayList<>());
+
+        // If ID is not provided (e.g., -1), generate the next available ID
+        if (id == -1) {
+            id = getNextAvailableId(username);
+        }
+
+        // Check if the ID already exists
         for (Message msg : userMessages.get(username)) {
             if (msg.id == id) {
                 return false;  // ID already exists
             }
         }
+
+        // Add the message with the generated or provided ID
         userMessages.get(username).add(new Message(id, message));
         saveMessagesToFile();  // Save messages to file
         return true;
     }
 
-    public String getMessages(String username) {
-        if (userMessages.containsKey(username)) {
-            StringBuilder allMessages = new StringBuilder();
-            for (Message msg : userMessages.get(username)) {
-                allMessages.append("ID: ").append(msg.id).append(" - ").append(msg.content).append("\n");
-            }
-            return allMessages.toString();
+    // Helper method to generate the next available ID for a user
+    private int getNextAvailableId(String username) {
+        List<Message> messages = userMessages.get(username);
+        if (messages.isEmpty()) {
+            return 1;  // Start with ID 1 if no messages exist
+        } else {
+            // Find the maximum ID and increment it by 1
+            int maxId = messages.stream()
+                    .mapToInt(msg -> msg.id)
+                    .max()
+                    .orElse(0);
+            return maxId + 1;
         }
-        return "No messages found for user: " + username;
     }
 
     // Get a specific message by ID for a user
@@ -108,11 +129,9 @@ public class MessageStorage {
         return allMessages;
     }
 
-    // Clear all messages for a specific user
-    public void clearMessages(String username) {
-        if (userMessages.containsKey(username)) {
-            userMessages.get(username).clear();
-            saveMessagesToFile();  // Save changes to file
-        }
+    // Clear all messages (thread-safe)
+    public synchronized void clearMessages() {
+        userMessages.clear();  // Clear the entire map
+        saveMessagesToFile();  // Save changes to file
     }
 }

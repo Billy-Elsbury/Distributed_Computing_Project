@@ -57,10 +57,10 @@ public class SMPClient {
                     case "UPLOAD":
                         System.out.println("Enter message:");
                         String message = br.readLine();
-                        System.out.println("Enter message ID:");
+                        System.out.println("Enter message ID (leave blank to auto-generate):");
                         String id = br.readLine();
-                        // Send the UPLOAD command with username, ID, and message
-                        mySocket.sendMessage("UPLOAD " + username + " " + id + " " + message);
+                        int messageId = id.isEmpty() ? -1 : Integer.parseInt(id);  // Use -1 if ID is blank
+                        mySocket.sendMessage("UPLOAD " + username + " " + messageId + " " + message);
                         System.out.println(mySocket.receiveMessage());
                         break;
 
@@ -79,12 +79,10 @@ public class SMPClient {
                         break;
 
                     case "CLEAR":
-                        System.out.println("Enter username:");
-                        String clearUsername = br.readLine();
                         System.out.println("Are you sure you want to clear all messages? (yes/no):");
                         String confirmation = br.readLine().toLowerCase();
                         if (confirmation.equals("yes")) {
-                            mySocket.sendMessage("CLEAR " + clearUsername);
+                            mySocket.sendMessage("CLEAR");
                             System.out.println(mySocket.receiveMessage());
                         } else {
                             System.out.println("Clear operation cancelled.");

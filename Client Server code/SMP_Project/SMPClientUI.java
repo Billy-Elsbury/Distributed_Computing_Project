@@ -10,9 +10,8 @@ import java.io.IOException;
 
 public class SMPClientUI extends Application {
     private String username;
-    private MyStreamSocket mySocket;
+    private final MyStreamSocket mySocket;
     private TextArea outputArea;
-    private Stage primaryStage;
 
     public SMPClientUI(String username, MyStreamSocket mySocket) {
         this.username = username;
@@ -26,7 +25,6 @@ public class SMPClientUI extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        this.primaryStage = primaryStage;
         primaryStage.setTitle("SMP Client - " + username);
 
         // Create a border layout
@@ -93,6 +91,7 @@ public class SMPClientUI extends Application {
         clearButton.setOnAction(e -> clear());
         logoffButton.setOnAction(e -> logoff(primaryStage));
     }
+
     private void upload(String message, String id) {
         if (username == null) {
             outputArea.appendText("102 Not logged in.\n");
@@ -100,10 +99,12 @@ public class SMPClientUI extends Application {
         }
 
         try {
-            // Send the UPLOAD command with username, ID, and message
-            mySocket.sendMessage("UPLOAD " + username + " " + id + " " + message);
+            int messageId = id.isEmpty() ? -1 : Integer.parseInt(id);  // Use -1 if ID is blank
+            mySocket.sendMessage("UPLOAD " + username + " " + messageId + " " + message);
             String response = mySocket.receiveMessage();
             outputArea.appendText(response + "\n");
+        } catch (NumberFormatException e) {
+            outputArea.appendText("102 Invalid message ID.\n");
         } catch (IOException ex) {
             outputArea.appendText("Error: " + ex.getMessage() + "\n");
         }
@@ -116,13 +117,9 @@ public class SMPClientUI extends Application {
         }
 
         try {
-            if (id.isEmpty()) {
-                // If the ID field is empty, download all messages
-                mySocket.sendMessage("DOWNLOAD_ALL");
-            } else {
-                // Otherwise, download the specific message by ID
-                mySocket.sendMessage("DOWNLOAD " + id);
-            }
+            //download the specific message by ID
+            mySocket.sendMessage("DOWNLOAD " + id);
+
             String response = mySocket.receiveMessage();
             outputArea.appendText("Messages from server:\n" + response + "\n");  // Display all messages at once
         } catch (IOException ex) {
@@ -161,11 +158,12 @@ public class SMPClientUI extends Application {
             return;
         }
 
+        // Show confirmation dialog on the client side
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to clear all messages?", ButtonType.YES, ButtonType.NO);
         alert.showAndWait().ifPresent(response -> {
             if (response == ButtonType.YES) {
                 try {
-                    mySocket.sendMessage("CLEAR " + username);
+                    mySocket.sendMessage("CLEAR");
                     String result = mySocket.receiveMessage();
                     outputArea.appendText(result + "\n");
                 } catch (IOException ex) {

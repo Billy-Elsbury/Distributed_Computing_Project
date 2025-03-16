@@ -1,19 +1,21 @@
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+
 import java.io.*;
 import java.util.List;
 
 public class SMPThread implements Runnable {
     private MyStreamSocket myDataSocket;
-    private MessageStorage messageStorage;  // Use the updated MessageStorage
+    private MessageStorage messageStorage = MessageStorage.getInstance();  // Use the singleton instance
     private String username = null;  // Track the username for this session
 
     public SMPThread(MyStreamSocket myDataSocket) {
         this.myDataSocket = myDataSocket;
-        this.messageStorage = new MessageStorage();  // Initialize message storage
     }
 
     public void run() {
         boolean done = false;
-        String message;
+        String message = "";
 
         try {
             while (!done) {
@@ -51,7 +53,7 @@ public class SMPThread implements Runnable {
                                 break;
                             }
                             try {
-                                int id = Integer.parseInt(parts[2]);
+                                int id = Integer.parseInt(parts[2]);  // ID can be -1 if not provided
                                 String messageContent = parts[3];  // The message content
                                 if (messageStorage.addMessage(username, id, messageContent)) {
                                     myDataSocket.sendMessage("101 Message uploaded.");
@@ -74,11 +76,10 @@ public class SMPThread implements Runnable {
 
                     case "DOWNLOAD":
                         if (parts.length == 2) {
-                            String input = parts[1];  // Either "all" or a specific ID
-                            if (input.equalsIgnoreCase("all")) {
-                                // Download all messages for the logged-in user
-                                String userMessages = messageStorage.getMessages(this.username);
-                                myDataSocket.sendMessage(userMessages);  // Send all messages for the user
+                            String input = parts[1];
+                            if (input.isEmpty()) {
+                                // FIXED: Return error if no ID is provided
+                                myDataSocket.sendMessage("102 No message ID provided. Usage: DOWNLOAD <ID>");
                             } else {
                                 // Download specific message by ID for the logged-in user
                                 try {
@@ -90,21 +91,21 @@ public class SMPThread implements Runnable {
                                 }
                             }
                         } else {
-                            myDataSocket.sendMessage("102 Invalid download format. Usage: DOWNLOAD <ID> or DOWNLOAD all");
+                            // FIXED: Return error if the command format is invalid
+                            myDataSocket.sendMessage("102 Invalid download format. Usage: DOWNLOAD <ID>");
                         }
                         break;
 
                     case "CLEAR":
-                        if (parts.length == 2) {
-                            String username = parts[1];
-                            if (this.username == null || !this.username.equals(username)) {
-                                myDataSocket.sendMessage("102 Not logged in.");
-                                break;
+                        if (parts.length == 1) {
+                            try {
+                                messageStorage.clearMessages();  // Clear all messages
+                                myDataSocket.sendMessage("101 All messages cleared.");
+                            } catch (Exception ex) {
+                                myDataSocket.sendMessage("102 Error clearing messages.");
                             }
-                            messageStorage.clearMessages(username);
-                            myDataSocket.sendMessage("101 All messages cleared.");
                         } else {
-                            myDataSocket.sendMessage("102 Invalid clear format. Usage: CLEAR <username>");
+                            myDataSocket.sendMessage("102 Invalid clear format. Usage: CLEAR");
                         }
                         break;
 
