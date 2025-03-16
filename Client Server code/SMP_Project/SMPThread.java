@@ -2,8 +2,9 @@ import java.util.List;
 
 public class SMPThread implements Runnable {
     private MyStreamSocket myDataSocket;
-    private MessageStorage messageStorage = MessageStorage.getInstance();  // Use the singleton instance
-    private String username = null;  // Track the username for this session
+    private MessageStorage messageStorage = MessageStorage.getInstance(); // Use the singleton instance
+    private UserManager userManager = new UserManager(); // Add UserManager
+    private String username = null; // Track the username for this session
 
     public SMPThread(MyStreamSocket myDataSocket) {
         this.myDataSocket = myDataSocket;
@@ -20,7 +21,7 @@ public class SMPThread implements Runnable {
                 System.out.println("Message received: " + message);
 
                 // Split the message into parts
-                String[] parts = message.split(" ", 4);  // Split into at most 4 parts
+                String[] parts = message.split(" ", 4); // Split into at most 4 parts
                 if (parts.length == 0) {
                     myDataSocket.sendMessage(ErrorCodes.INVALID_COMMAND + " Invalid command format.");
                     continue;
@@ -29,12 +30,31 @@ public class SMPThread implements Runnable {
                 int requestCode = Integer.parseInt(parts[0]);
 
                 switch (requestCode) {
+
+                    case RequestCodes.REGISTER:
+                        if (parts.length == 3) {
+                            String username = parts[1];
+                            String password = parts[2];
+                            if (userManager.addUser(username, password)) {
+                                myDataSocket.sendMessage(ErrorCodes.SUCCESS + " Registration successful.");
+                            } else {
+                                myDataSocket.sendMessage(ErrorCodes.INVALID_LOGIN_FORMAT + " Username already exists.");
+                            }
+                        } else {
+                            myDataSocket.sendMessage(ErrorCodes.INVALID_LOGIN_FORMAT + " Invalid registration format. Usage: " + RequestCodes.REGISTER + " <username> <password>");
+                        }
+                        break;
+
                     case RequestCodes.LOGIN:
                         if (parts.length == 3) {
                             String username = parts[1];
                             String password = parts[2];
-                            this.username = username;
-                            myDataSocket.sendMessage(ErrorCodes.SUCCESS + " Login successful.");
+                            if (userManager.verifyUser(username, password)) { // Verify user credentials
+                                this.username = username;
+                                myDataSocket.sendMessage(ErrorCodes.SUCCESS + " Login successful.");
+                            } else {
+                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + " Invalid username or password.");
+                            }
                         } else {
                             myDataSocket.sendMessage(ErrorCodes.INVALID_LOGIN_FORMAT + " Invalid login format. Usage: " + RequestCodes.LOGIN + " <username> <password>");
                         }
