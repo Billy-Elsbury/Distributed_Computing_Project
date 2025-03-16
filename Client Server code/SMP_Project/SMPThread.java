@@ -1,5 +1,5 @@
 import java.io.*;
-import java.util.*;
+import java.util.List;
 
 public class SMPThread implements Runnable {
     private MyStreamSocket myDataSocket;
@@ -21,20 +21,20 @@ public class SMPThread implements Runnable {
                 message = myDataSocket.receiveMessage();
                 System.out.println("Message received: " + message);
 
-                // Use StringTokenizer to parse the message
-                StringTokenizer tokenizer = new StringTokenizer(message);
-                if (!tokenizer.hasMoreTokens()) {
+                // Split the message into parts
+                String[] parts = message.split(" ", 4);  // Split into at most 4 parts
+                if (parts.length == 0) {
                     myDataSocket.sendMessage("102 Invalid command format.");
                     continue;
                 }
 
-                String command = tokenizer.nextToken().toUpperCase();
+                String command = parts[0].toUpperCase();
 
                 switch (command) {
                     case "LOGIN":
-                        if (tokenizer.countTokens() == 2) {
-                            String username = tokenizer.nextToken();
-                            String password = tokenizer.nextToken();
+                        if (parts.length == 3) {
+                            String username = parts[1];
+                            String password = parts[2];
                             // Accept any login without checking if the user is already logged in
                             this.username = username;  // Associate this session with the username
                             myDataSocket.sendMessage("101 Login successful.");
@@ -44,20 +44,15 @@ public class SMPThread implements Runnable {
                         break;
 
                     case "UPLOAD":
-                        if (tokenizer.countTokens() >= 3) {
-                            String username = tokenizer.nextToken();
+                        if (parts.length == 4) {
+                            String username = parts[1];
                             if (this.username == null || !this.username.equals(username)) {
                                 myDataSocket.sendMessage("102 Not logged in.");
                                 break;
                             }
                             try {
-                                int id = Integer.parseInt(tokenizer.nextToken());
-                                // The rest of the tokens are the message
-                                StringBuilder messageBuilder = new StringBuilder();
-                                while (tokenizer.hasMoreTokens()) {
-                                    messageBuilder.append(tokenizer.nextToken()).append(" ");
-                                }
-                                String messageContent = messageBuilder.toString().trim();  // Remove trailing space
+                                int id = Integer.parseInt(parts[2]);
+                                String messageContent = parts[3];  // The message content
                                 if (messageStorage.addMessage(username, id, messageContent)) {
                                     myDataSocket.sendMessage("101 Message uploaded.");
                                 } else {
@@ -71,37 +66,37 @@ public class SMPThread implements Runnable {
                         }
                         break;
 
+                    case "DOWNLOAD_ALL":
+                        List<String> allMessages = messageStorage.getAllMessages();
+                        String response = String.join("|", allMessages);  // Join messages with a delimiter
+                        myDataSocket.sendMessage(response);
+                        break;
+
                     case "DOWNLOAD":
-                        if (tokenizer.countTokens() == 1) {
-                            String username = tokenizer.nextToken();
-                            if (this.username == null || !this.username.equals(username)) {
-                                myDataSocket.sendMessage("102 Not logged in.");
-                                break;
-                            }
-                            // Download all messages for the user
-                            myDataSocket.sendMessage(messageStorage.getMessages(username));
-                        } else if (tokenizer.countTokens() == 2) {
-                            String username = tokenizer.nextToken();
-                            if (this.username == null || !this.username.equals(username)) {
-                                myDataSocket.sendMessage("102 Not logged in.");
-                                break;
-                            }
-                            // Download specific message by ID for the user
-                            try {
-                                int messageId = Integer.parseInt(tokenizer.nextToken());
-                                String specificMessage = messageStorage.getMessageById(username, messageId);
-                                myDataSocket.sendMessage(specificMessage);
-                            } catch (NumberFormatException e) {
-                                myDataSocket.sendMessage("102 Invalid message ID.");
+                        if (parts.length == 2) {
+                            String input = parts[1];  // Either "all" or a specific ID
+                            if (input.equalsIgnoreCase("all")) {
+                                // Download all messages for the logged-in user
+                                String userMessages = messageStorage.getMessages(this.username);
+                                myDataSocket.sendMessage(userMessages);  // Send all messages for the user
+                            } else {
+                                // Download specific message by ID for the logged-in user
+                                try {
+                                    int messageId = Integer.parseInt(input);
+                                    String specificMessage = messageStorage.getMessageById(this.username, messageId);
+                                    myDataSocket.sendMessage(specificMessage);
+                                } catch (NumberFormatException e) {
+                                    myDataSocket.sendMessage("102 Invalid message ID.");
+                                }
                             }
                         } else {
-                            myDataSocket.sendMessage("102 Invalid download format. Usage: DOWNLOAD <username> or DOWNLOAD <username> <ID>");
+                            myDataSocket.sendMessage("102 Invalid download format. Usage: DOWNLOAD <ID> or DOWNLOAD all");
                         }
                         break;
 
                     case "CLEAR":
-                        if (tokenizer.countTokens() == 1) {
-                            String username = tokenizer.nextToken();
+                        if (parts.length == 2) {
+                            String username = parts[1];
                             if (this.username == null || !this.username.equals(username)) {
                                 myDataSocket.sendMessage("102 Not logged in.");
                                 break;
@@ -114,8 +109,8 @@ public class SMPThread implements Runnable {
                         break;
 
                     case "LOGOFF":
-                        if (tokenizer.countTokens() == 1) {
-                            String username = tokenizer.nextToken();
+                        if (parts.length == 2) {
+                            String username = parts[1];
                             if (this.username == null || !this.username.equals(username)) {
                                 myDataSocket.sendMessage("102 Not logged in.");
                                 break;

@@ -65,17 +65,15 @@ public class SMPClient {
                         break;
 
                     case "DOWNLOAD":
-                        System.out.println("Enter username:");
-                        String downloadUsername = br.readLine();
                         System.out.println("Enter 'all' to download all messages or a specific message ID:");
                         String downloadInput = br.readLine();
                         if (downloadInput.equalsIgnoreCase("all")) {
-                            // Download all messages for the user
-                            mySocket.sendMessage("DOWNLOAD " + downloadUsername);
+                            // Download all messages
+                            mySocket.sendMessage("DOWNLOAD all");
                             System.out.println("Messages from server:\n" + mySocket.receiveMessage());
                         } else {
-                            // Download specific message by ID for the user
-                            mySocket.sendMessage("DOWNLOAD " + downloadUsername + " " + downloadInput);
+                            // Download specific message by ID
+                            mySocket.sendMessage("DOWNLOAD " + downloadInput);
                             System.out.println("Message from server:\n" + mySocket.receiveMessage());
                         }
                         break;

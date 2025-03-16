@@ -49,7 +49,7 @@ public class SMPClientUI extends Application {
         Label idLabel = new Label("Message ID:");
         GridPane.setConstraints(idLabel, 0, 1);
         TextField idField = new TextField();
-        idField.setPromptText("Enter message ID");
+        idField.setPromptText("Enter message ID (leave blank for all)");
         GridPane.setConstraints(idField, 1, 1);
 
         // Add components to the input panel
@@ -66,6 +66,12 @@ public class SMPClientUI extends Application {
 
         buttonPanel.getChildren().addAll(uploadButton, downloadButton, clearButton, logoffButton);
 
+        Button downloadAllButton = new Button("Download All Messages");
+        buttonPanel.getChildren().add(downloadAllButton);
+
+// Add action listener for the new button
+        downloadAllButton.setOnAction(e -> downloadAll());
+        
         // Output area
         outputArea = new TextArea();
         outputArea.setEditable(false);
@@ -87,7 +93,6 @@ public class SMPClientUI extends Application {
         clearButton.setOnAction(e -> clear());
         logoffButton.setOnAction(e -> logoff(primaryStage));
     }
-
     private void upload(String message, String id) {
         if (username == null) {
             outputArea.appendText("102 Not logged in.\n");
@@ -112,12 +117,39 @@ public class SMPClientUI extends Application {
 
         try {
             if (id.isEmpty()) {
-                mySocket.sendMessage("DOWNLOAD " + username);
+                // If the ID field is empty, download all messages
+                mySocket.sendMessage("DOWNLOAD_ALL");
             } else {
-                mySocket.sendMessage("DOWNLOAD " + username + " " + id);
+                // Otherwise, download the specific message by ID
+                mySocket.sendMessage("DOWNLOAD " + id);
             }
             String response = mySocket.receiveMessage();
-            outputArea.appendText("Messages from server:\n" + response + "\n");
+            outputArea.appendText("Messages from server:\n" + response + "\n");  // Display all messages at once
+        } catch (IOException ex) {
+            outputArea.appendText("Error: " + ex.getMessage() + "\n");
+        }
+    }
+
+    private void downloadAll() {
+        if (username == null) {
+            outputArea.appendText("102 Not logged in.\n");
+            return;
+        }
+
+        try {
+            mySocket.sendMessage("DOWNLOAD_ALL");
+            String response = mySocket.receiveMessage();
+
+            // Split the response using the delimiter
+            String[] messages = response.split("\\|");
+
+            // Clear the output area before displaying new messages
+            outputArea.clear();
+
+            // Append each message on a new line
+            for (String message : messages) {
+                outputArea.appendText(message + "\n");
+            }
         } catch (IOException ex) {
             outputArea.appendText("Error: " + ex.getMessage() + "\n");
         }

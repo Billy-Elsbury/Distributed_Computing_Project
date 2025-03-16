@@ -74,7 +74,6 @@ public class MessageStorage {
         return true;
     }
 
-    // Get all messages for a user
     public String getMessages(String username) {
         if (userMessages.containsKey(username)) {
             StringBuilder allMessages = new StringBuilder();
@@ -96,6 +95,17 @@ public class MessageStorage {
             }
         }
         return "Message not found for user: " + username;
+    }
+
+    // Get all messages in the file regardless of user or ID
+    public List<String> getAllMessages() {
+        List<String> allMessages = new ArrayList<>();
+        for (Map.Entry<String, List<Message>> entry : userMessages.entrySet()) {
+            for (Message msg : entry.getValue()) {
+                allMessages.add("ID: " + msg.id + " - " + msg.content);  // Add each message as a separate item
+            }
+        }
+        return allMessages;
     }
 
     // Clear all messages for a specific user
