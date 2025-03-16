@@ -16,34 +16,28 @@ public class SMPClientUI extends JFrame {
     private void initializeUI() {
         setTitle("SMP Client - " + username);
         setSize(600, 400);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Center the window on the screen
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Change to DISPOSE_ON_CLOSE
+        setLocationRelativeTo(null);
 
-        // Use GridBagLayout for better control over component placement
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
-        // Input panel
         JPanel inputPanel = new JPanel(new GridLayout(2, 2, 10, 10));
         inputPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Message field
         JLabel messageLabel = new JLabel("Message:");
         JTextField messageField = new JTextField();
         messageField.setToolTipText("Enter message");
 
-        // Message ID field
         JLabel idLabel = new JLabel("Message ID:");
         JTextField idField = new JTextField();
         idField.setToolTipText("Enter message ID (leave blank for all)");
 
-        // Add components to the input panel
         inputPanel.add(messageLabel);
         inputPanel.add(messageField);
         inputPanel.add(idLabel);
         inputPanel.add(idField);
 
-        // Button panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         JButton uploadButton = new JButton("Upload");
         JButton downloadButton = new JButton("Download");
@@ -57,14 +51,12 @@ public class SMPClientUI extends JFrame {
         buttonPanel.add(logoffButton);
         buttonPanel.add(downloadAllButton);
 
-        // Output area
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         outputArea.setWrapStyleWord(true);
         outputArea.setLineWrap(true);
         JScrollPane scrollPane = new JScrollPane(outputArea);
 
-        // Add components to the frame using GridBagConstraints
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.weightx = 1.0;
@@ -72,15 +64,14 @@ public class SMPClientUI extends JFrame {
         add(inputPanel, gbc);
 
         gbc.gridy = 1;
-        gbc.insets = new Insets(10, 0, 10, 0); // Add some vertical spacing
+        gbc.insets = new Insets(10, 0, 10, 0);
         add(buttonPanel, gbc);
 
         gbc.gridy = 2;
-        gbc.weighty = 1.0; // Allow the output area to expand vertically
+        gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         add(scrollPane, gbc);
 
-        // Add action listeners
         uploadButton.addActionListener(e -> upload(messageField.getText(), idField.getText()));
         downloadButton.addActionListener(e -> download(idField.getText()));
         downloadAllButton.addActionListener(e -> downloadAll());
@@ -132,13 +123,10 @@ public class SMPClientUI extends JFrame {
             mySocket.sendMessage(RequestCodes.DOWNLOAD_ALL + "");
             String response = mySocket.receiveMessage();
 
-            // Split the response using the delimiter
             String[] messages = response.split("\\|");
 
-            // Clear the output area before displaying new messages
             outputArea.setText("");
 
-            // Append each message on a new line
             for (String message : messages) {
                 outputArea.append(message + "\n");
             }
@@ -181,13 +169,11 @@ public class SMPClientUI extends JFrame {
             mySocket.close();
             username = null;
 
-            // Close the current window
             dispose();
 
-            // Reopen the login window
             SwingUtilities.invokeLater(() -> {
-                LoginWindow2 loginWindow2 = new LoginWindow2();
-                loginWindow2.setVisible(true);
+                LoginWindow loginWindow = new LoginWindow();
+                loginWindow.setVisible(true);
             });
         } catch (IOException ex) {
             outputArea.append("Error: " + ex.getMessage() + "\n");
