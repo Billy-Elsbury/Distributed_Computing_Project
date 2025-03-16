@@ -6,22 +6,20 @@ import java.io.IOException;
 
 public class LoginWindow extends JFrame {
     public static void main(String[] args) {
-        // Run the GUI on the Event Dispatch Thread (EDT)
         SwingUtilities.invokeLater(() -> {
-            LoginWindow loginWindow = new LoginWindow();
-            loginWindow.setVisible(true);
+            LoginWindow2 loginWindow2 = new LoginWindow2();
+            loginWindow2.setVisible(true);
         });
     }
 
     public LoginWindow() {
         setTitle("Login");
-        setSize(400, 300); // Slightly larger window
+        setSize(400, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Center the window on the screen
+        setLocationRelativeTo(null);
 
-        // Use a BorderLayout for the main panel
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Add padding
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Create a panel for the form with a GridBagLayout
         JPanel formPanel = new JPanel(new GridBagLayout());

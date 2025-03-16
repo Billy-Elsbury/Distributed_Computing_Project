@@ -186,8 +186,8 @@ public class SMPClientUI extends JFrame {
 
             // Reopen the login window
             SwingUtilities.invokeLater(() -> {
-                LoginWindow loginWindow = new LoginWindow();
-                loginWindow.setVisible(true);
+                LoginWindow2 loginWindow2 = new LoginWindow2();
+                loginWindow2.setVisible(true);
             });
         } catch (IOException ex) {
             outputArea.append("Error: " + ex.getMessage() + "\n");

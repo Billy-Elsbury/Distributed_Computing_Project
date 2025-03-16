@@ -12,5 +12,5 @@ public class ErrorCodes {
     public static final int ERROR_CLEARING_MESSAGES = 111;
     public static final int NO_MESSAGE_ID_PROVIDED = 112;
     public static final int UNKNOWN_COMMAND = 113;
-    public static final int EMPTY_MESSAGE = 114;  // New error code for empty messages
+    public static final int EMPTY_MESSAGE = 114;
 }

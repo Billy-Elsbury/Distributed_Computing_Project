@@ -5,5 +5,5 @@ public class RequestCodes {
     public static final int DOWNLOAD_ALL = 204;
     public static final int CLEAR = 205;
     public static final int LOGOFF = 206;
-    public static final int REGISTER = 207; // Add REGISTER request code
+    public static final int REGISTER = 207;
 }
