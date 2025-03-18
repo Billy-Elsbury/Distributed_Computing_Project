@@ -8,8 +8,9 @@ public class SMPClientUI extends JFrame {
     private JTextArea outputArea;
 
     public SMPClientUI(String loginUsername, ClientHelper loginClientHelper) {
-        this.username = loginUsername;
-        this.clientHelper = loginClientHelper;
+        username = loginUsername;
+        username = "billy";
+        clientHelper = loginClientHelper;
         initializeUI();
     }
 
@@ -114,10 +115,12 @@ public class SMPClientUI extends JFrame {
     }
 
     private void upload(String message, String id) {
+
         System.out.println(username);
-        if (username.isEmpty()) {
-            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
-            return;
+        if (username == null) {
+            //  outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
+            //return;
+            System.out.println(username);
         }
         if (message.isEmpty()) {
             outputArea.append(ErrorCodes.EMPTY_MESSAGE + " Message content cannot be empty.\n");
