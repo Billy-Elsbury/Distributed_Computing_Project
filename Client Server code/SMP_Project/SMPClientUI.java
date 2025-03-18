@@ -9,7 +9,10 @@ public class SMPClientUI extends JFrame {
 
     public SMPClientUI(String loginUsername, ClientHelper loginClientHelper) {
         username = loginUsername;
+<<<<<<< Updated upstream
         username = "billy";
+=======
+>>>>>>> Stashed changes
         clientHelper = loginClientHelper;
         initializeUI();
     }
@@ -118,12 +121,17 @@ public class SMPClientUI extends JFrame {
 
         System.out.println(username);
         if (username == null) {
+<<<<<<< Updated upstream
             //  outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
             //return;
             System.out.println(username);
+=======
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + "Upload Failed, Not logged in.\n");
+            return;
+>>>>>>> Stashed changes
         }
         if (message.isEmpty()) {
-            outputArea.append(ErrorCodes.EMPTY_MESSAGE + " Message content cannot be empty.\n");
+            outputArea.append(ErrorCodes.EMPTY_MESSAGE + "Upload Failed, Message content cannot be empty.\n");
             return;
         }
         try {
@@ -131,28 +139,28 @@ public class SMPClientUI extends JFrame {
             String response = clientHelper.upload(username, messageId, message);
             outputArea.append(response + "\n");
         } catch (NumberFormatException e) {
-            outputArea.append(ErrorCodes.INVALID_MESSAGE_ID + " Invalid message ID.\n");
+            outputArea.append(ErrorCodes.INVALID_MESSAGE_ID + "Upload Failed, Invalid message ID.\n");
         } catch (IOException ex) {
-            outputArea.append("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Upload Failed, Error: " + ex.getMessage() + "\n");
         }
     }
 
     private void download(String id) {
         if (username == null) {
-            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + "Download Failed, Not logged in.\n");
             return;
         }
         try {
             String response = clientHelper.download(id);
             outputArea.append("Messages from server:\n" + response + "\n");
         } catch (IOException ex) {
-            outputArea.append("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Download Failed, Error: " + ex.getMessage() + "\n");
         }
     }
 
     private void downloadAll() {
         if (username == null) {
-            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + "Download All Failed, Not logged in.\n");
             return;
         }
         try {
@@ -163,13 +171,13 @@ public class SMPClientUI extends JFrame {
                 outputArea.append(message + "\n");
             }
         } catch (IOException ex) {
-            outputArea.append("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Download All Failed, Error: " + ex.getMessage() + "\n");
         }
     }
 
     private void clear() {
         if (username == null) {
-            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
+            outputArea.append(ErrorCodes.NOT_LOGGED_IN + "Clear Failed, Not logged in.\n");
             return;
         }
         int confirm = JOptionPane.showConfirmDialog(
@@ -183,7 +191,7 @@ public class SMPClientUI extends JFrame {
                 String result = clientHelper.clear();
                 outputArea.append(result + "\n");
             } catch (IOException ex) {
-                outputArea.append("Error: " + ex.getMessage() + "\n");
+                outputArea.append("Clear Failed, Error: " + ex.getMessage() + "\n");
             }
         }
     }

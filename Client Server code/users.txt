@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 Adam:Password
 Billy:Password
 fgh:fgh
@@ -6,3 +7,13 @@ Luke:Password
 Peter:Password
 Connor:Password
 ftdrfgh:ghjf
+=======
+hgfg:dfg
+fghf:fgh
+Billy:Password
+sdf:sdf
+Luke:Password
+Peter:Password
+gfhd:fdggd
+dffg:dfg
+>>>>>>> Stashed changes

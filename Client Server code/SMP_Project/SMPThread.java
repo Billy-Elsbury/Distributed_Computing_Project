@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.List;
 
 public class SMPThread implements Runnable {
@@ -18,6 +19,10 @@ public class SMPThread implements Runnable {
             while (!done) {
                 // Receive a message from the client
                 message = myDataSocket.receiveMessage();
+                if (message == null) { // Client disconnected
+                    System.out.println("Client disconnected.");
+                    break;
+                }
                 System.out.println("Message received: " + message);
 
                 // Split the message into parts
@@ -53,10 +58,10 @@ public class SMPThread implements Runnable {
                                 this.username = username;
                                 myDataSocket.sendMessage(ErrorCodes.SUCCESS + " Login successful.");
                             } else {
-                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + " Invalid username or password.");
+                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + "Login Failed in Thread, Invalid username or password.");
                             }
                         } else {
-                            myDataSocket.sendMessage(ErrorCodes.INVALID_LOGIN_FORMAT + " Invalid login format. Usage: " + RequestCodes.LOGIN + " <username> <password>");
+                            myDataSocket.sendMessage(ErrorCodes.INVALID_LOGIN_FORMAT + "Login Failed in Thread, Invalid login format. Usage: " + RequestCodes.LOGIN + " <username> <password>");
                         }
                         break;
 
@@ -64,7 +69,7 @@ public class SMPThread implements Runnable {
                         if (parts.length == 4) {
                             String username = parts[1];
                             if (this.username == null || !this.username.equals(username)) {
-                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + " Not logged in.");
+                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + "Upload Failed in Thread, Not logged in.");
                                 break;
                             }
                             try {
@@ -146,6 +151,14 @@ public class SMPThread implements Runnable {
             }
         } catch (Exception ex) {
             System.out.println("Exception caught in thread: " + ex);
+        }
+        finally
+        {
+            try {
+                myDataSocket.close(); // Close the socket on exit
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
