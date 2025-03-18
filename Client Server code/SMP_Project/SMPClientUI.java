@@ -4,12 +4,12 @@ import java.io.IOException;
 
 public class SMPClientUI extends JFrame {
     private String username;
-    private final ClientHelper clientHelper;
+    private ClientHelper clientHelper;
     private JTextArea outputArea;
 
-    public SMPClientUI(String username, ClientHelper clientHelper) {
-        this.username = username;
-        this.clientHelper = clientHelper;
+    public SMPClientUI(String loginUsername, ClientHelper loginClientHelper) {
+        this.username = loginUsername;
+        this.clientHelper = loginClientHelper;
         initializeUI();
     }
 
@@ -114,7 +114,8 @@ public class SMPClientUI extends JFrame {
     }
 
     private void upload(String message, String id) {
-        if (username == null) {
+        System.out.println(username);
+        if (username.isEmpty()) {
             outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
             return;
         }

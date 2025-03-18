@@ -78,13 +78,13 @@ public class LoginWindow extends JFrame {
         loginButton.setBackground(Color.WHITE);
         loginButton.setForeground(Color.BLACK);
         loginButton.setFocusPainted(false);
-        loginButton.addActionListener(_ -> handleLogin(userField.getText(), new String(passField.getPassword())));
+        loginButton.addActionListener(e -> handleLogin(userField.getText(), new String(passField.getPassword())));
 
         JButton registerButton = new JButton("Register");
         registerButton.setBackground(Color.WHITE);
         registerButton.setForeground(Color.BLACK);
         registerButton.setFocusPainted(false);
-        registerButton.addActionListener(_ -> handleRegister(userField.getText(), new String(passField.getPassword())));
+        registerButton.addActionListener(e -> handleRegister(userField.getText(), new String(passField.getPassword())));
 
         buttonPanel.add(loginButton);
         buttonPanel.add(registerButton);
@@ -107,7 +107,7 @@ public class LoginWindow extends JFrame {
 
                 if (response.startsWith(String.valueOf(ErrorCodes.SUCCESS))) {
                     ClientHelper clientHelper = new ClientHelper("localhost", 12345);
-                    SMPClientUI clientUI = new SMPClientUI("username", clientHelper);
+                    SMPClientUI clientUI = new SMPClientUI(username, clientHelper);
                     clientUI.setVisible(true);
                     dispose();
                 } else {
