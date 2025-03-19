@@ -185,24 +185,19 @@ public class SMPClientUI extends JFrame {
     }
 
     private void logoff() {
-        if (username == null) {
-            outputArea.append(ErrorCodes.NOT_LOGGED_IN + " Not logged in.\n");
-            return;
-        }
+        if (username == null) return;
+
         try {
-            String response = clientHelper.login(username, ""); // Send empty password for logoff
+            // Send LOGOFF command instead of reusing login
+            String response = clientHelper.logoff(username);
             outputArea.append(response + "\n");
             clientHelper.close();
             username = null;
-
             dispose();
 
-            SwingUtilities.invokeLater(() -> {
-                LoginWindow loginWindow = new LoginWindow();
-                loginWindow.setVisible(true);
-            });
+            SwingUtilities.invokeLater(() -> new LoginWindow().setVisible(true));
         } catch (IOException ex) {
-            outputArea.append("Error: " + ex.getMessage() + "\n");
+            outputArea.append("Logoff error: " + ex.getMessage() + "\n");
         }
     }
 }

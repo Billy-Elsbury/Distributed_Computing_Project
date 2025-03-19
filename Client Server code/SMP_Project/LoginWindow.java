@@ -94,30 +94,25 @@ public class LoginWindow extends JFrame {
     private void handleLogin(String username, String password) {
         if (!username.isEmpty() && !password.isEmpty()) {
             try {
-                System.setProperty("javax.net.ssl.trustStore", "clientTruststore.jks");
-                System.setProperty("javax.net.ssl.trustStorePassword", "password");
-
                 SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
                 SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket("localhost", 12345);
-
                 MyStreamSocket mySocket = new MyStreamSocket(sslSocket);
 
                 mySocket.sendMessage(RequestCodes.LOGIN + " " + username + " " + password);
                 String response = mySocket.receiveMessage();
 
                 if (response.startsWith(String.valueOf(ErrorCodes.SUCCESS))) {
-                    ClientHelper clientHelper = new ClientHelper("localhost", 12345);
-                    SMPClientUI clientUI = new SMPClientUI("username", clientHelper);
+                    ClientHelper clientHelper = new ClientHelper(mySocket); // Pass the existing socket
+                    SMPClientUI clientUI = new SMPClientUI(username, clientHelper);
                     clientUI.setVisible(true);
                     dispose();
                 } else {
                     JOptionPane.showMessageDialog(LoginWindow.this, response, "Error", JOptionPane.ERROR_MESSAGE);
+                    mySocket.close(); // Close the socket if login fails
                 }
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(LoginWindow.this, "Error connecting to the server: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        } else {
-            JOptionPane.showMessageDialog(LoginWindow.this, "Please enter a username and password.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

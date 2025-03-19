@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.List;
 
 public class SMPThread implements Runnable {
@@ -20,6 +21,12 @@ public class SMPThread implements Runnable {
                 message = myDataSocket.receiveMessage();
                 System.out.println("Message received: " + message);
 
+                // Check if the message is null (client disconnected)
+                if (message == null) {
+                    System.out.println("Client disconnected.");
+                    break; // Exit the loop and close the thread
+                }
+
                 // Split the message into parts
                 String[] parts = message.split(" ", 4); // Split into at most 4 parts
                 if (parts.length == 0) {
@@ -30,7 +37,6 @@ public class SMPThread implements Runnable {
                 int requestCode = Integer.parseInt(parts[0]);
 
                 switch (requestCode) {
-
                     case RequestCodes.REGISTER:
                         if (parts.length == 3) {
                             String username = parts[1];
@@ -49,14 +55,14 @@ public class SMPThread implements Runnable {
                         if (parts.length == 3) {
                             String username = parts[1];
                             String password = parts[2];
-                            if (userManager.verifyUser(username, password)) { // Verify user credentials
+                            if (userManager.verifyUser(username, password)) {
                                 this.username = username;
                                 myDataSocket.sendMessage(ErrorCodes.SUCCESS + " Login successful.");
                             } else {
-                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + " Invalid username or password.");
+                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + " Login Error in Thread, Invalid username or password.");
                             }
                         } else {
-                            myDataSocket.sendMessage(ErrorCodes.INVALID_LOGIN_FORMAT + " Invalid login format. Usage: " + RequestCodes.LOGIN + " <username> <password>");
+                            myDataSocket.sendMessage(ErrorCodes.INVALID_LOGIN_FORMAT + " Login Error in Thread, Invalid login format. Usage: " + RequestCodes.LOGIN + " <username> <password>");
                         }
                         break;
 
@@ -126,16 +132,11 @@ public class SMPThread implements Runnable {
                     case RequestCodes.LOGOFF:
                         if (parts.length == 2) {
                             String username = parts[1];
-                            if (this.username == null || !this.username.equals(username)) {
-                                myDataSocket.sendMessage(ErrorCodes.NOT_LOGGED_IN + " Not logged in.");
-                                break;
+                            if (this.username != null && this.username.equals(username)) {
+                                this.username = null;
+                                myDataSocket.sendMessage(ErrorCodes.SUCCESS + " Logoff successful.");
+                                done = true; // Terminate the thread
                             }
-                            this.username = null;
-                            myDataSocket.sendMessage(ErrorCodes.SUCCESS + " Logoff successful.");
-                            myDataSocket.close();
-                            done = true;
-                        } else {
-                            myDataSocket.sendMessage(ErrorCodes.INVALID_LOGOFF_FORMAT + " Invalid logoff format. Usage: " + RequestCodes.LOGOFF + " <username>");
                         }
                         break;
 
@@ -146,6 +147,13 @@ public class SMPThread implements Runnable {
             }
         } catch (Exception ex) {
             System.out.println("Exception caught in thread: " + ex);
+        } finally {
+            try {
+                myDataSocket.close(); // Close the socket on exit
+                System.out.println("Socket closed for user: " + username);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

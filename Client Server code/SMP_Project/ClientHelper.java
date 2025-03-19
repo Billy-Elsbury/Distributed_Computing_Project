@@ -14,6 +14,10 @@ public class ClientHelper {
         this.mySocket = new MyStreamSocket(sslSocket);
     }
 
+    public ClientHelper(MyStreamSocket mySocket) {
+        this.mySocket = mySocket;
+    }
+
     public String login(String username, String password) throws IOException {
         mySocket.sendMessage(RequestCodes.LOGIN + " " + username + " " + password);
         return mySocket.receiveMessage();
@@ -40,5 +44,10 @@ public class ClientHelper {
 
     public void close() throws IOException {
         mySocket.close();
+    }
+
+    public String logoff(String username) throws IOException {
+        mySocket.sendMessage(RequestCodes.LOGOFF + " " + username);
+        return mySocket.receiveMessage();
     }
 }
